@@ -41,7 +41,7 @@ jobs:
 
       - name: Build Signed Release AAB
         env:
-          KEYSTORE_FILE: app/financeassistant-upload.jks
+          KEYSTORE_FILE: financeassistant-upload.jks
           KEYSTORE_PASSWORD: ${{ secrets.KEYSTORE_PASSWORD }}
           KEY_ALIAS: ${{ secrets.KEY_ALIAS }}
           KEY_PASSWORD: ${{ secrets.KEY_PASSWORD }}
