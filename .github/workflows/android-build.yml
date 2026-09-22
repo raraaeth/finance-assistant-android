@@ -39,6 +39,10 @@ jobs:
         run: |
           echo "$KEYSTORE_BASE64" | base64 --decode > app/financeassistant-upload.jks
 
+      # ==========================================
+      # BUILD SIGNED RELEASE AAB
+      # ==========================================
+
       - name: Build Signed Release AAB
         env:
           KEYSTORE_FILE: financeassistant-upload.jks
@@ -47,8 +51,34 @@ jobs:
           KEY_PASSWORD: ${{ secrets.KEY_PASSWORD }}
         run: ./gradlew bundleRelease
 
+      # ==========================================
+      # BUILD SIGNED RELEASE APK
+      # ==========================================
+
+      - name: Build Signed Release APK
+        env:
+          KEYSTORE_FILE: financeassistant-upload.jks
+          KEYSTORE_PASSWORD: ${{ secrets.KEYSTORE_PASSWORD }}
+          KEY_ALIAS: ${{ secrets.KEY_ALIAS }}
+          KEY_PASSWORD: ${{ secrets.KEY_PASSWORD }}
+        run: ./gradlew assembleRelease
+
+      # ==========================================
+      # UPLOAD SIGNED AAB
+      # ==========================================
+
       - name: Upload Signed AAB
         uses: actions/upload-artifact@v4
         with:
           name: finance-assistant-aab-signed
           path: app/build/outputs/bundle/release/*.aab
+
+      # ==========================================
+      # UPLOAD SIGNED APK
+      # ==========================================
+
+      - name: Upload Signed APK
+        uses: actions/upload-artifact@v4
+        with:
+          name: finance-assistant-apk-signed
+          path: app/build/outputs/apk/release/*.apk
