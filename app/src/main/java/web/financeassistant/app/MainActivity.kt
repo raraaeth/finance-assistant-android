@@ -38,6 +38,28 @@ class MainActivity : AppCompatActivity() {
                     R.layout.activity_main
             )
 
+            // =========================================
+            // ACTION BAR
+            // =========================================
+
+            supportActionBar?.apply {
+
+                title =
+                        "Finance Assistant"
+
+                setDisplayShowHomeEnabled(
+                        true
+                )
+
+                setDisplayUseLogoEnabled(
+                        true
+                )
+
+                setLogo(
+                        R.mipmap.ic_launcher
+                )
+            }
+
             initializeWebView()
 
         }, splashDuration)
