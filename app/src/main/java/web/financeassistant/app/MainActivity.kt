@@ -1,14 +1,20 @@
 package web.financeassistant.app
 
+import android.content.ContentValues
 import android.os.Bundle
 import android.os.Handler
 import android.os.Looper
+import android.provider.MediaStore
+import android.util.Base64
 import android.webkit.CookieManager
+import android.webkit.JavascriptInterface
 import android.webkit.WebSettings
 import android.webkit.WebView
 import android.webkit.WebViewClient
+import android.widget.Toast
 import androidx.appcompat.app.AppCompatActivity
 import androidx.swiperefreshlayout.widget.SwipeRefreshLayout
+import java.io.ByteArrayOutputStream
 
 class MainActivity : AppCompatActivity() {
 
@@ -68,6 +74,19 @@ class MainActivity : AppCompatActivity() {
                 true
         )
 
+        // =========================================
+        // ANDROID EXPORT PNG BRIDGE
+        // =========================================
+
+        webView.addJavascriptInterface(
+                AndroidExportBridge(),
+                "AndroidExport"
+        )
+
+        // =========================================
+        // WEBVIEW CLIENT
+        // =========================================
+
         webView.webViewClient =
                 object : WebViewClient() {
 
@@ -92,6 +111,154 @@ class MainActivity : AppCompatActivity() {
         webView.loadUrl(
                 "https://financeassistant.web.id/pages/"
         )
+    }
+
+    // =============================================
+    // ANDROID EXPORT PNG BRIDGE
+    // =============================================
+
+    inner class AndroidExportBridge {
+
+        private var fileName =
+                "rincian-gaji.png"
+
+        private val pngData =
+                ByteArrayOutputStream()
+
+        @JavascriptInterface
+        fun startPngExport(
+                name: String
+        ) {
+
+            fileName =
+                    if (
+                            name.endsWith(
+                                    ".png",
+                                    ignoreCase = true
+                            )
+                    ) {
+                        name
+                    } else {
+                        "$name.png"
+                    }
+
+            pngData.reset()
+        }
+
+        @JavascriptInterface
+        fun appendPngChunk(
+                chunk: String
+        ) {
+
+            try {
+
+                val bytes =
+                        Base64.decode(
+                                chunk,
+                                Base64.DEFAULT
+                        )
+
+                pngData.write(
+                        bytes
+                )
+
+            } catch (e: Exception) {
+
+                e.printStackTrace()
+            }
+        }
+
+        @JavascriptInterface
+        fun finishPngExport() {
+
+            try {
+
+                val imageBytes =
+                        pngData.toByteArray()
+
+                val values =
+                        ContentValues().apply {
+
+                            put(
+                                    MediaStore.Images.Media.DISPLAY_NAME,
+                                    fileName
+                            )
+
+                            put(
+                                    MediaStore.Images.Media.MIME_TYPE,
+                                    "image/png"
+                            )
+
+                            put(
+                                    MediaStore.Images.Media.RELATIVE_PATH,
+                                    "Pictures/Finance Assistant"
+                            )
+                        }
+
+                val resolver =
+                        contentResolver
+
+                val imageUri =
+                        resolver.insert(
+                                MediaStore.Images.Media.EXTERNAL_CONTENT_URI,
+                                values
+                        )
+
+                if (imageUri == null) {
+
+                    showExportMessage(
+                            "Gagal membuat file PNG"
+                    )
+
+                    return
+                }
+
+                resolver.openOutputStream(
+                        imageUri
+                ).use { outputStream ->
+
+                    outputStream?.write(
+                            imageBytes
+                    )
+                }
+
+                showExportMessage(
+                        "PNG berhasil disimpan"
+                )
+
+            } catch (e: Exception) {
+
+                e.printStackTrace()
+
+                showExportMessage(
+                        "Export PNG gagal"
+                )
+
+            } finally {
+
+                pngData.reset()
+            }
+        }
+
+        @JavascriptInterface
+        fun cancelPngExport() {
+
+            pngData.reset()
+        }
+
+        private fun showExportMessage(
+                message: String
+        ) {
+
+            runOnUiThread {
+
+                Toast.makeText(
+                        this@MainActivity,
+                        message,
+                        Toast.LENGTH_SHORT
+                ).show()
+            }
+        }
     }
 
     override fun onBackPressed() {
